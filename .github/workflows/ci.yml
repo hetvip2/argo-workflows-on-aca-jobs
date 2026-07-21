@@ -15,6 +15,4 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: az bicep build --file infra/main.bicep --stdout > /dev/null
-      - uses: azure/setup-kubectl@v4
-      - run: kubectl apply --dry-run=client --validate=false -f workflows/service-account.yaml -f workflows/workflow-template.yaml
       - run: docker build -t argo-workflows-on-aca-jobs:test .
