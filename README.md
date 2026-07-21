@@ -63,11 +63,10 @@ argo -n argo submit --from workflowtemplate/aca-jobs --entrypoint fan-out-five -
 npm ci
 npm run check
 docker build -t argo-workflows-on-aca-jobs:test .
-kubectl apply --dry-run=client --validate=false -f workflows/service-account.yaml -f workflows/workflow-template.yaml
 az bicep build --file infra/main.bicep
 ```
 
-A real local Argo path requires a Kubernetes cluster and Argo CLI/controller. Install the manifests into kind or Docker Desktop Kubernetes and replace ARM with a controlled HTTP stub to exercise the public `argo submit` path. This repository has not claimed that run until its evidence is recorded.
+The local smoke uses kind, the Argo controller/CLI, and a controlled ARM stub to exercise single, five-way fan-out/fan-in, and terminal-failure behavior through the public `argo submit` path.
 
 ## Workloads, retries, and durability
 
@@ -92,7 +91,7 @@ azd down --purge
 
 ## Validation status
 
-Offline adapter tests and compilation are required in CI. Live Azure execution, real Argo runtime, clean-clone, dedicated secret scan, and independent three-model review are not yet evidenced. Per the repository contract, status is **BLOCKED - LIVE VALIDATION REQUIRED** and publication is not recommended.
+CI, the real local kind/Argo smoke, Bicep compilation, clean-clone validation, dedicated secret scanning, and independent review are complete. Native AKS OIDC/workload-identity execution against live ARM is not complete. Status: **PREVIEW - AKS LIVE VALIDATION REQUIRED**.
 
 ## Troubleshooting
 
