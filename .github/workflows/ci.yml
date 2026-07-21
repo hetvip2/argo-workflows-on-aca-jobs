@@ -1,0 +1,21 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22.17.0", cache: npm }
+      - run: npm ci
+      - run: npm run check
+      - uses: azure/setup-bicep@v2
+      - run: bicep build infra/main.bicep
+      - uses: azure/setup-kubectl@v4
+      - run: kubectl apply --dry-run=client --validate=false -f workflows/service-account.yaml -f workflows/workflow-template.yaml
+      - run: docker build -t argo-workflows-on-aca-jobs:test .

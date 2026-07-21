@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "${AZURE_LOCATION}" },
+    "environmentName": { "value": "${AZURE_ENV_NAME}-aca" },
+    "jobName": { "value": "${AZURE_ENV_NAME}-worker" },
+    "identityName": { "value": "${AZURE_ENV_NAME}-argo" },
+    "aksOidcIssuerUrl": { "value": "${AKS_OIDC_ISSUER_URL}" },
+    "workloadIdentitySubject": {
+      "value": "${ARGO_WORKLOAD_IDENTITY_SUBJECT=system:serviceaccount:argo:aca-jobs-runner}"
+    }
+  }
+}

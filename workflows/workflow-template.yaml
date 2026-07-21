@@ -1,0 +1,187 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: aca-jobs
+spec:
+  serviceAccountName: aca-jobs-runner
+  podMetadata:
+    labels:
+      azure.workload.identity/use: "true"
+  entrypoint: single
+  arguments:
+    parameters:
+      - name: helper-image
+        value: REPLACE_HELPER_IMAGE
+      - name: subscription-id
+        value: REPLACE_SUBSCRIPTION_ID
+      - name: resource-group
+        value: REPLACE_RESOURCE_GROUP
+      - name: job-name
+        value: REPLACE_JOB_NAME
+      - name: command-json
+        value: '["/bin/sh","-c"]'
+      - name: args-json
+        value: '["echo correlation=$CORRELATION_ID shard=$SHARD"]'
+      - name: env-json
+        value: "[]"
+      - name: cpu
+        value: "0.25"
+      - name: memory
+        value: 0.5Gi
+      - name: timeout-ms
+        value: "1800000"
+  templates:
+    - name: single
+      dag:
+        tasks:
+          - name: run
+            template: aca-job
+            arguments:
+              parameters:
+                - name: shard
+                  value: single
+    - name: fan-out-five
+      dag:
+        tasks:
+          - name: shard
+            template: aca-job
+            withItems: ["0", "1", "2", "3", "4"]
+            arguments:
+              parameters:
+                - name: shard
+                  value: "{{item}}"
+          - name: fan-in
+            dependencies: [shard]
+            template: marker
+            arguments:
+              parameters:
+                - name: message
+                  value: fan-in-complete
+    - name: failure-with-suppressed-downstream
+      dag:
+        tasks:
+          - name: run
+            template: aca-job
+            arguments:
+              parameters:
+                - name: shard
+                  value: deliberate-failure
+          - name: must-not-run
+            dependencies: [run]
+            template: marker
+            arguments:
+              parameters:
+                - name: message
+                  value: downstream-ran
+    - name: aca-job
+      inputs:
+        parameters:
+          - name: shard
+      dag:
+        tasks:
+          - name: start
+            template: start
+            arguments:
+              parameters:
+                - name: shard
+                  value: "{{inputs.parameters.shard}}"
+          - name: wait
+            dependencies: [start]
+            template: wait
+            arguments:
+              parameters:
+                - name: execution-name
+                  value: "{{tasks.start.outputs.parameters.execution-name}}"
+                - name: shard
+                  value: "{{inputs.parameters.shard}}"
+    - name: start
+      inputs:
+        parameters:
+          - name: shard
+      outputs:
+        parameters:
+          - name: execution-name
+            valueFrom:
+              path: /tmp/execution-name
+      retryStrategy:
+        limit: "2"
+        retryPolicy: OnError
+        backoff:
+          duration: 5s
+          factor: "2"
+          maxDuration: 30s
+      container:
+        image: "{{workflow.parameters.helper-image}}"
+        command: [node, dist/src/cli.js]
+        args: [start]
+        env: &common-env
+          - {
+              name: AZURE_SUBSCRIPTION_ID,
+              value: "{{workflow.parameters.subscription-id}}",
+            }
+          - {
+              name: ACA_RESOURCE_GROUP,
+              value: "{{workflow.parameters.resource-group}}",
+            }
+          - { name: ACA_JOB_NAME, value: "{{workflow.parameters.job-name}}" }
+          - {
+              name: CORRELATION_ID,
+              value: "{{workflow.uid}}-{{inputs.parameters.shard}}",
+            }
+          - { name: SHARD, value: "{{inputs.parameters.shard}}" }
+          - {
+              name: ACA_COMMAND_JSON,
+              value: "{{workflow.parameters.command-json}}",
+            }
+          - { name: ACA_ARGS_JSON, value: "{{workflow.parameters.args-json}}" }
+          - { name: ACA_ENV_JSON, value: "{{workflow.parameters.env-json}}" }
+          - { name: ACA_CPU, value: "{{workflow.parameters.cpu}}" }
+          - { name: ACA_MEMORY, value: "{{workflow.parameters.memory}}" }
+    - name: wait
+      inputs:
+        parameters:
+          - name: execution-name
+          - name: shard
+      retryStrategy:
+        limit: "3"
+        retryPolicy: OnError
+        backoff:
+          duration: 10s
+          factor: "2"
+          maxDuration: 1m
+      container:
+        image: "{{workflow.parameters.helper-image}}"
+        command: [node, dist/src/cli.js]
+        args: [wait]
+        env:
+          - {
+              name: AZURE_SUBSCRIPTION_ID,
+              value: "{{workflow.parameters.subscription-id}}",
+            }
+          - {
+              name: ACA_RESOURCE_GROUP,
+              value: "{{workflow.parameters.resource-group}}",
+            }
+          - { name: ACA_JOB_NAME, value: "{{workflow.parameters.job-name}}" }
+          - {
+              name: CORRELATION_ID,
+              value: "{{workflow.uid}}-{{inputs.parameters.shard}}",
+            }
+          - {
+              name: ACA_EXECUTION_NAME,
+              value: "{{inputs.parameters.execution-name}}",
+            }
+          - {
+              name: EXECUTION_TIMEOUT_MS,
+              value: "{{workflow.parameters.timeout-ms}}",
+            }
+    - name: marker
+      inputs:
+        parameters:
+          - name: message
+      container:
+        image: "{{workflow.parameters.helper-image}}"
+        command: [node, -e]
+        args:
+          - "console.log(JSON.stringify({marker: process.argv[1]}))"
+          - "{{inputs.parameters.message}}"

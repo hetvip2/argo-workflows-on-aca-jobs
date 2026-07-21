@@ -1,0 +1,31 @@
+{
+  "name": "argo-workflows-on-aca-jobs-helper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Azure Container Apps Jobs helper for an existing Argo Workflows control plane.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.15"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/cli.js",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "npm run format:check && npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.11.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.31.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.31.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,17 @@
+name: argo-workflows-on-aca-jobs
+metadata:
+  template: argo-workflows-on-aca-jobs@0.1.0
+infra:
+  provider: bicep
+hooks:
+  preprovision:
+    posix:
+      shell: sh
+      run: ./scripts/check-prerequisites.sh
+      continueOnError: false
+      interactive: true
+    windows:
+      shell: pwsh
+      run: ./scripts/check-prerequisites.ps1
+      continueOnError: false
+      interactive: true
