@@ -60,6 +60,7 @@ if (action === "start") {
   }
   const overrides: JobOverrides = {
     containerName: process.env.ACA_CONTAINER_NAME ?? "worker",
+    image: required("ACA_IMAGE"),
     command: parseJson<string[]>("ACA_COMMAND_JSON", []),
     args: parseJson<string[]>("ACA_ARGS_JSON", []),
     env: environment,

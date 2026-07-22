@@ -40,6 +40,7 @@ describe("AcaJobsClient", () => {
     const result = await client.startAndWait({
       correlationId: "argo-run-1",
       overrides: {
+        image: "mcr.microsoft.com/azurelinux/base/core:3.0",
         command: ["echo"],
         args: ["hello"],
         env: [{ name: "SHARD", value: "1" }],
@@ -65,6 +66,7 @@ describe("AcaJobsClient", () => {
       containers: [
         {
           name: "worker",
+          image: "mcr.microsoft.com/azurelinux/base/core:3.0",
           command: ["echo"],
           args: ["hello"],
           env: [{ name: "SHARD", value: "1" }],

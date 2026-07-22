@@ -70,7 +70,7 @@ The local smoke uses kind, the Argo controller/CLI, and a controlled ARM stub to
 
 ## Workloads, retries, and durability
 
-Override `command-json`, `args-json`, `env-json`, `cpu`, `memory`, `job-name`, and timeout as Argo parameters. The helper retries only HTTP 429 and transient 5xx responses, honors `Retry-After`, refreshes once after 401, redacts response bodies, emits `argo-workflows-on-aca-jobs/0.1.0`, and propagates `{{workflow.uid}}-<shard>` as the ARM client request ID.
+Override `target-image`, `command-json`, `args-json`, `env-json`, `cpu`, `memory`, `job-name`, and timeout as Argo parameters. The helper retries only HTTP 429 and transient 5xx responses, honors `Retry-After`, refreshes once after 401, redacts response bodies, emits `argo-workflows-on-aca-jobs/0.1.0`, and propagates `{{workflow.uid}}-<shard>` as the ARM client request ID.
 
 The start node outputs the stable ACA execution name into Argo node state. The wait node consumes that name, so wait retries resume without starting another execution. A failed/canceled ACA execution fails the Argo DAG and suppresses dependents. Deleting an Argo workflow does not cancel a running ACA execution; cancel it explicitly through ARM after confirming the execution identity.
 
@@ -91,7 +91,7 @@ azd down --purge
 
 ## Validation status
 
-CI, the real local kind/Argo smoke, Bicep compilation, clean-clone validation, dedicated secret scanning, and independent review are complete. Native AKS OIDC/workload-identity execution against live ARM is not complete. Status: **PREVIEW - AKS LIVE VALIDATION REQUIRED**.
+CI, the real local kind/Argo smoke, Bicep compilation, clean-clone validation, dedicated secret scanning, and independent review are complete. Native AKS OIDC/workload-identity validation against live ARM completed with successful single-job and five-way fan-out workflows and six matching successful ACA executions. Status: **LIVE VALIDATED**.
 
 ## Troubleshooting
 
