@@ -13,6 +13,7 @@ export interface JobTarget {
 
 export interface JobOverrides {
   containerName?: string;
+  image?: string;
   command?: string[];
   args?: string[];
   env?: Array<{ name: string; value?: string; secretRef?: string }>;
@@ -63,6 +64,7 @@ export class AcaJobsClient {
     const container = overrides
       ? {
           name: overrides.containerName ?? "worker",
+          image: overrides.image,
           command: overrides.command,
           args: overrides.args,
           env: overrides.env,

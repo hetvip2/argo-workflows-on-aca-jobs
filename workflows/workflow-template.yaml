@@ -18,6 +18,8 @@ spec:
         value: REPLACE_RESOURCE_GROUP
       - name: job-name
         value: REPLACE_JOB_NAME
+      - name: target-image
+        value: REPLACE_TARGET_IMAGE
       - name: command-json
         value: '["/bin/sh","-c"]'
       - name: args-json
@@ -124,6 +126,7 @@ spec:
               value: "{{workflow.parameters.resource-group}}",
             }
           - { name: ACA_JOB_NAME, value: "{{workflow.parameters.job-name}}" }
+          - { name: ACA_IMAGE, value: "{{workflow.parameters.target-image}}" }
           - {
               name: CORRELATION_ID,
               value: "{{workflow.uid}}-{{inputs.parameters.shard}}",
