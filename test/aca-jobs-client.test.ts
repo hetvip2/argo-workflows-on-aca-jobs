@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 
 import {
   AcaJobsClient,
@@ -7,6 +8,35 @@ import {
 } from "../src/aca-jobs-client.js";
 
 const target = { subscriptionId: "sub", resourceGroup: "rg", jobName: "job" };
+
+describe("fan-out workflow definition", () => {
+  const workflow = readFileSync(
+    new URL("../workflows/workflow-template.yaml", import.meta.url),
+    "utf8",
+  );
+
+  it("defaults the native sequence fan-out to five shards", () => {
+    expect(workflow).toMatch(
+      /- name: shard-count\s+value: "5"[\s\S]*withSequence:\s+count: "{{workflow\.parameters\.shard-count}}"/,
+    );
+  });
+
+  it("defines a 25-shard sequence within the supported 1-50 range", () => {
+    const shardCount = 25;
+    const shards = Array.from({ length: shardCount }, (_, shard) => shard);
+    const enumBlock = workflow.match(/enum:\s*\[([\s\S]*?)\]/)?.[1];
+    const declaredRange = enumBlock?.match(/"\d+"/g) ?? [];
+
+    expect(declaredRange).toEqual(
+      Array.from({ length: 50 }, (_, index) =>
+        JSON.stringify(String(index + 1)),
+      ),
+    );
+    expect(shards).toHaveLength(25);
+    expect(shards.at(-1)).toBe(24);
+    expect(workflow).toContain('count: "{{workflow.parameters.shard-count}}"');
+  });
+});
 
 function response(
   status: number,
