@@ -74,7 +74,19 @@ Override `target-image`, `command-json`, `args-json`, `env-json`, `cpu`, `memory
 
 The start node outputs the stable ACA execution name into Argo node state. The wait node consumes that name, so wait retries resume without starting another execution. A failed/canceled ACA execution fails the Argo DAG and suppresses dependents. Deleting an Argo workflow does not cancel a running ACA execution; cancel it explicitly through ARM after confirming the execution identity.
 
-The fan-out entry point creates five independent ACA executions. Tune Argo parallelism, ACA Job replica limits, ARM throttling, and poll interval together.
+The fan-out entry point creates five independent ACA executions by default.
+
+## Production concurrency
+
+`fan-out-five` uses Argo's native `withSequence` and accepts `shard-count` from `1` through `50`; omitting it preserves the five-shard default. Submit a 25-shard definition with:
+
+```bash
+argo -n argo submit --from workflowtemplate/aca-jobs --entrypoint fan-out-five -p shard-count=25 --watch
+```
+
+Capture the Argo workflow name, phase, shard node count, fan-in phase, ACA execution names, ACA execution statuses, and each `x-ms-client-request-id` (`<workflow UID>-<shard>`) as evidence. Tune Argo parallelism, ACA Job replica limits, ARM throttling, and poll interval using observed behavior in your environment.
+
+Only the default five-way fan-out has live proof in this repository. The 25-shard definition is covered by offline tests; 25- and 50-shard runs have not been measured, so this repository makes no throughput, quota, or completion-time claim for them.
 
 ## Authentication and least privilege
 
